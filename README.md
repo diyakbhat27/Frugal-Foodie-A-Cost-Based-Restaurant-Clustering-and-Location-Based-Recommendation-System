@@ -67,8 +67,8 @@ Replace `"YOUR_API_KEY_HERE"` with your actual key.
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/yourusername/frugal-foodie.git
-   cd frugal-foodie
+  git clone https://github.com/yourusername/Frugal-Foodie-A-Cost-Based-Restaurant-Clustering-and-Location-Based-Recommendation-System.git
+  cd Frugal-Foodie-A-Cost-Based-Restaurant-Clustering-and-Location-Based-Recommendation-System
    ```
 
 2. **Create a virtual environment (optional but recommended)**
