@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>FRUGAL FOODIE</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div class="container">
+    <h2>FRUGAL FOODIE</h2>
+    <p>Enter your budget and preferred location method</p>
+
+    <label for="budget">Your Budget (₹):</label>
+    <input type="number" id="budget" placeholder="e.g., 500" required>
+
+    <label for="radius">Search Radius (km):</label>
+    <input type="number" id="radius" placeholder="e.g., 2" required>
+
+    <div class="location-toggle">
+      <label>
+        <input type="radio" name="locationMode" value="auto" checked> Use My Current Location
+      </label>
+      <label>
+        <input type="radio" name="locationMode" value="manual"> Enter Area Manually
+      </label>
+    </div>
+
+    <div id="manualLocation">
+      <label for="area">Area Name:</label>
+      <input type="text" id="area" placeholder="e.g., Koramangala">
+    </div>
+
+    <button onclick="getRecommendations()">Get Recommendations</button>
+
+    <div id="results"></div>
+  </div>
+
+  <script>
+    const manualRadio = document.querySelector('input[value="manual"]');
+    const autoRadio = document.querySelector('input[value="auto"]');
+    const manualLocationDiv = document.getElementById("manualLocation");
+
+    manualRadio.addEventListener("change", () => {
+      manualLocationDiv.style.display = "block";
+    });
+
+    autoRadio.addEventListener("change", () => {
+      manualLocationDiv.style.display = "none";
+    });
+
+    function getRecommendations() {
+      const budget = document.getElementById("budget").value;
+      const radius = document.getElementById("radius").value;
+      const locationMode = document.querySelector('input[name="locationMode"]:checked').value;
+      const area = document.getElementById("area").value;
+      const resultsDiv = document.getElementById("results");
+      resultsDiv.innerHTML = "<p>Loading...</p>";
+
+      if (locationMode === "manual") {
+        fetch("/recommend", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ budget, radius, locationMode, area })
+        })
+        .then(response => response.json())
+        .then(data => displayResults(data))
+        .catch(error => {
+          resultsDiv.innerHTML = "<p>Something went wrong. Please try again.</p>";
+          console.error(error);
+        });
+      } else {
+        if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition(position => {
+            fetch("/recommend", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json"
+              },
+              body: JSON.stringify({
+                budget,
+                radius,
+                locationMode,
+                latitude: position.coords.latitude,
+                longitude: position.coords.longitude
+              })
+            })
+            .then(response => response.json())
+            .then(data => displayResults(data))
+            .catch(error => {
+              resultsDiv.innerHTML = "<p>Something went wrong. Please try again.</p>";
+              console.error(error);
+            });
+          }, () => {
+            resultsDiv.innerHTML = "<p>Geolocation access denied.</p>";
+          });
+        } else {
+          resultsDiv.innerHTML = "<p>Geolocation not supported by this browser.</p>";
+        }
+      }
+    }
+
+    function displayResults(data) {
+      const resultsDiv = document.getElementById("results");
+      resultsDiv.innerHTML = "";
+
+      if (data.error) {
+        resultsDiv.innerHTML = `<p><strong>Error:</strong> ${data.error}</p>`;
+        return;
+      }
+
+      if (data.results && data.results.length > 0) {
+        data.results.forEach(restaurant => {
+          resultsDiv.innerHTML += `
+            <p>
+              <strong>${restaurant.name}</strong><br>
+              Address: ${restaurant.address}<br>
+              Rating: ${restaurant.rating}<br>
+              <a href="${restaurant.map_link}" target="_blank">View on Map</a>
+            </p>
+            <hr>
+          `;
+        });
+      } else {
+        resultsDiv.innerHTML = "<p>No matching restaurants found.</p>";
+      }
+    }
+  </script>
+</body>
+</html>
